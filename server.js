@@ -8,6 +8,9 @@ const User = require('./models/Contact');
 const Business = require('./models/Business');
 const LogoSignature = require('./models/LogoSignature'); 
 const Terms = require('./models/Terms');
+const Invoice = require('./models/Invoice');
+
+
 
 
 const app = express();
@@ -167,6 +170,43 @@ app.get('/terms', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch terms' });
   }
 });
+
+app.get('/invoices', async (req, res) => {
+  try {
+    const invoices = await Invoice.find().sort({ createdAt: -1 });
+    res.json(invoices);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch invoices' });
+  }
+});
+
+
+app.post('/save-invoice', async (req, res) => {
+  try {
+    const { customerName, customerMobile, billingNumber, billingDate, items } = req.body;
+
+    if (!customerName || !customerMobile || !items || items.length === 0) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const newInvoice = new Invoice({
+      customerName,
+      customerMobile,
+      billingNumber,
+      billingDate,
+      items
+    });
+
+    await newInvoice.save();
+
+    return res.status(201).json({ message: 'Invoice saved successfully!', invoice: newInvoice });
+  } catch (error) {
+    console.error('❌ Error saving invoice:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running at http://localhost:${PORT}`);
